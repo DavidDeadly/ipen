@@ -21,6 +21,7 @@ lib/
 
 # IDE files
 .cache/
+compile_commands.json
 .idea/
 .vscode/
 *.vcxproj
