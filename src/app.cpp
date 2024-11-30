@@ -22,10 +22,23 @@
 #include "include/gpu/ganesh/gl/GrGLDirectContext.h"
 #include "include/gpu/ganesh/gl/GrGLInterface.h"
 
+static void cursor_position_callback(GLFWwindow *window, double xpos,
+                                     double ypos) {
+  bool isDrawing =
+      glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS;
+
+  if (isDrawing)
+    std::cout << "Drawing at " << xpos << ", " << ypos << std::endl;
+}
+
 static void key_callback(GLFWwindow *window, int key, int scancode, int action,
                          int mods) {
   if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
     glfwSetWindowShouldClose(window, GL_TRUE);
+
+  if (key == GLFW_MOUSE_BUTTON_1 && action == GLFW_PRESS) {
+    std::cout << "Mouse press" << std::endl;
+  }
 }
 
 static void draw_with_skia(SkCanvas *canvas, GrDirectContext *context) {
@@ -100,6 +113,7 @@ void App::start() {
 
   glfwSwapInterval(1);
   glfwSetKeyCallback(window, key_callback);
+  glfwSetCursorPosCallback(window, cursor_position_callback);
 
   SkCanvas *canvas = surface->getCanvas();
 
