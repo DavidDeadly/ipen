@@ -1,4 +1,5 @@
 // Copyright (c) 2024 DavidDeadly
+#include <cstddef>
 #include <iostream>
 
 #define SK_GANESH
@@ -52,19 +53,7 @@ static void draw_with_skia(SkCanvas *canvas, GrDirectContext *context) {
   context->flush();
 }
 
-App::App(std::string name, int width, int height) {
-  this->width = width;
-  this->height = height;
-  this->name = name;
-}
-
-void App::start() {
-  int failedInit = !glfwInit();
-  if (failedInit) {
-    std::cerr << "Failed to initialize GLFW" << std::endl;
-    return;
-  }
-
+static GLFWwindow *createWindow(App *app) {
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
   glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
@@ -81,15 +70,32 @@ void App::start() {
   glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, GL_TRUE);
   glfwWindowHint(GLFW_MAXIMIZED, GL_TRUE);
 
-  GLFWwindow *window = glfwCreateWindow(width, height, "Ipen", NULL, NULL);
+  GLFWwindow *window =
+      glfwCreateWindow(app->width, app->height, "Ipen", NULL, NULL);
   if (!window) {
     std::cerr << "Failed to create GLFW window" << std::endl;
     glfwTerminate();
-    return;
+    return NULL;
   }
 
   glfwMakeContextCurrent(window);
+  return window;
+}
 
+App::App(std::string name, int width, int height) {
+  this->width = width;
+  this->height = height;
+  this->name = name;
+}
+
+void App::start() {
+  int failedInit = !glfwInit();
+  if (failedInit) {
+    std::cerr << "Failed to initialize GLFW" << std::endl;
+    return;
+  }
+
+  window = createWindow(this);
   init_skia(width, height);
 
   glfwSwapInterval(1);
