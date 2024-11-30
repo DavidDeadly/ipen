@@ -1,5 +1,6 @@
 // Copyright (c) 2024 DavidDeadly
 #include <cstddef>
+#include <functional>
 #include <iostream>
 
 #define SK_GANESH
@@ -22,14 +23,9 @@
 #include "include/gpu/ganesh/gl/GrGLDirectContext.h"
 #include "include/gpu/ganesh/gl/GrGLInterface.h"
 
-static void cursor_position_callback(GLFWwindow *window, double xpos,
-                                     double ypos) {
-  bool isDrawing =
-      glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS;
-
-  if (isDrawing)
-    std::cout << "Drawing at " << xpos << ", " << ypos << std::endl;
-}
+static bool isNotDrawing = false;
+static double dx = 0;
+static double dy = 0;
 
 static void key_callback(GLFWwindow *window, int key, int scancode, int action,
                          int mods) {
@@ -41,28 +37,28 @@ static void key_callback(GLFWwindow *window, int key, int scancode, int action,
   }
 }
 
-static void draw_with_skia(SkCanvas *canvas, GrDirectContext *context) {
+static void cursor_position_callback(GLFWwindow *window, double xpos,
+                                     double ypos) {
+  isNotDrawing =
+      glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) != GLFW_PRESS;
+
+  if (isNotDrawing)
+    return;
+
+  dx = xpos;
+  dy = ypos;
+
+  std::cout << "Drawing at " << xpos << ", " << ypos << std::endl;
+}
+
+static void draw_line(SkCanvas *canvas, GrDirectContext *context,
+                      SkPaint paint) {
   // Clear the canvas
-  canvas->clear(SK_AlphaTRANSPARENT);
+  // canvas->clear(SK_AlphaTRANSPARENT);
+  if (isNotDrawing)
+    return;
 
-  // Draw a red circle
-  SkPaint paint;
-  paint.setColor(SK_ColorRED);
-  canvas->drawCircle(200, 200, 100, paint);
-
-  // Draw a blue rectangle
-  paint.setColor(SK_ColorBLUE);
-  canvas->drawRect(SkRect::MakeXYWH(300, 150, 200, 100), paint);
-
-  auto text = SkTextBlob::MakeFromString("Hello", SkFont(nullptr, 20));
-  canvas->drawTextBlob(text, 50, 25, paint);
-
-  paint.setColor(SK_ColorRED);
-  paint.setAntiAlias(true);
-  paint.setStyle(SkPaint::kStroke_Style);
-  paint.setStrokeWidth(10);
-
-  canvas->drawLine(20, 20, 100, 100, paint);
+  canvas->drawCircle(dx, dy, 1, paint);
   context->flush();
 }
 
@@ -83,23 +79,20 @@ static GLFWwindow *createWindow(App *app) {
   glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, GL_TRUE);
   glfwWindowHint(GLFW_MAXIMIZED, GL_TRUE);
 
-  GLFWwindow *window =
-      glfwCreateWindow(app->width, app->height, "Ipen", NULL, NULL);
+  GLFWwindow *window = glfwCreateWindow(700, 700, "Ipen", NULL, NULL);
   if (!window) {
     std::cerr << "Failed to create GLFW window" << std::endl;
     glfwTerminate();
     return NULL;
   }
 
+  glfwGetWindowSize(window, &app->width, &app->height);
+
   glfwMakeContextCurrent(window);
   return window;
 }
 
-App::App(std::string name, int width, int height) {
-  this->width = width;
-  this->height = height;
-  this->name = name;
-}
+App::App(std::string name) { this->name = name; }
 
 void App::start() {
   int failedInit = !glfwInit();
@@ -116,13 +109,17 @@ void App::start() {
   glfwSetCursorPosCallback(window, cursor_position_callback);
 
   SkCanvas *canvas = surface->getCanvas();
+  SkPaint paint;
+  paint.setColor(SK_ColorRED);
+  paint.setAntiAlias(true);
+  paint.setStrokeWidth(2.0f);
+  paint.setStyle(SkPaint::kStroke_Style);
 
   while (!glfwWindowShouldClose(window)) {
-    glfwWaitEvents();
-
-    draw_with_skia(canvas, context);
+    draw_line(canvas, context, paint);
 
     glfwSwapBuffers(window);
+    glfwPollEvents();
   }
 
   glfwDestroyWindow(window);

@@ -15,13 +15,14 @@ public:
   int height;
 
 private:
+  SkCanvas *canvas;
   SkSurface *surface;
   GrDirectContext *context;
   GLFWwindow *window;
 
 public:
   // Initializes GLFW and SKIA
-  App(std::string name, int width, int height);
+  App(std::string name);
 
   // Destructor to clean up resources used for GLFW and SKIA
   ~App();
@@ -29,5 +30,7 @@ public:
   void start();
 
 private:
+  void callback(GLFWwindow *window, double xpos, double ypos);
+
   void init_skia(int w, int h);
 };
