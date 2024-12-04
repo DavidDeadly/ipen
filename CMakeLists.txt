@@ -30,4 +30,6 @@ target_link_libraries (ipen
   png
   freetype
   fontconfig
+  input
+  udev
 )

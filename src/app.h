@@ -32,5 +32,5 @@ public:
 private:
   void callback(GLFWwindow *window, double xpos, double ypos);
 
-  void init_skia(int w, int h);
+  void initSkia(int w, int h);
 };
