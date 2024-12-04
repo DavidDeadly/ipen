@@ -1,7 +1,8 @@
 // Copyright (c) 2024 DavidDeadly
+#include "include/core/SkPaint.h"
 #include <cstddef>
-#include <functional>
 #include <iostream>
+#include <vector>
 
 #define SK_GANESH
 #define SK_GL // For GrContext::MakeGL
@@ -23,10 +24,6 @@
 #include "include/gpu/ganesh/gl/GrGLDirectContext.h"
 #include "include/gpu/ganesh/gl/GrGLInterface.h"
 
-static bool isNotDrawing = false;
-static double dx = 0;
-static double dy = 0;
-
 static void key_callback(GLFWwindow *window, int key, int scancode, int action,
                          int mods) {
   if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
@@ -37,29 +34,29 @@ static void key_callback(GLFWwindow *window, int key, int scancode, int action,
   }
 }
 
+struct Line {
+  double prevX, prevY, currX, currY;
+};
+
+std::vector<Line> lines;
+static double prevX = -1, prevY = -1;
 static void cursor_position_callback(GLFWwindow *window, double xpos,
                                      double ypos) {
-  isNotDrawing =
+  bool isNotDrawing =
       glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) != GLFW_PRESS;
 
-  if (isNotDrawing)
+  if (isNotDrawing) {
+    prevX = -1;
+    prevY = -1;
     return;
+  }
 
-  dx = xpos;
-  dy = ypos;
+  bool isValidLine = prevX >= 0 && prevY >= 0;
+  if (isValidLine)
+    lines.push_back({prevX, prevY, xpos, ypos});
 
-  std::cout << "Drawing at " << xpos << ", " << ypos << std::endl;
-}
-
-static void draw_line(SkCanvas *canvas, GrDirectContext *context,
-                      SkPaint paint) {
-  // Clear the canvas
-  // canvas->clear(SK_AlphaTRANSPARENT);
-  if (isNotDrawing)
-    return;
-
-  canvas->drawCircle(dx, dy, 1, paint);
-  context->flush();
+  prevX = xpos;
+  prevY = ypos;
 }
 
 static GLFWwindow *createWindow(App *app) {
@@ -108,7 +105,7 @@ void App::start() {
   glfwSetKeyCallback(window, key_callback);
   glfwSetCursorPosCallback(window, cursor_position_callback);
 
-  SkCanvas *canvas = surface->getCanvas();
+  canvas = surface->getCanvas();
   SkPaint paint;
   paint.setColor(SK_ColorRED);
   paint.setAntiAlias(true);
@@ -116,7 +113,12 @@ void App::start() {
   paint.setStyle(SkPaint::kStroke_Style);
 
   while (!glfwWindowShouldClose(window)) {
-    draw_line(canvas, context, paint);
+    canvas->clear(SK_ColorTRANSPARENT);
+
+    for (const auto line : lines)
+      canvas->drawLine(line.prevX, line.prevY, line.currX, line.currY, paint);
+
+    context->flush();
 
     glfwSwapBuffers(window);
     glfwPollEvents();
