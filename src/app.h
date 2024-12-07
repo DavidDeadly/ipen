@@ -1,12 +1,18 @@
 // Copyright (c) 2024 DavidDeadly
 #pragma once
 
+#include <vector>
+
 #include "GLFW/glfw3.h"
 #include "include/core/SkCanvas.h"
 #include "include/core/SkImage.h"
 #include "include/core/SkSurface.h"
 #include "include/gpu/ganesh/GrDirectContext.h"
 #include "include/gpu/ganesh/gl/GrGLDirectContext.h"
+
+struct Line {
+  double prevX, prevY, currX, currY;
+};
 
 class App {
 public:
@@ -20,6 +26,10 @@ private:
   GrDirectContext *context;
   GLFWwindow *window;
 
+  std::vector<Line> lines;
+  double prevX, prevY;
+  bool isNotDrawing;
+
 public:
   // Initializes GLFW and SKIA
   App(std::string name);
@@ -29,8 +39,12 @@ public:
 
   void start();
 
-private:
-  void callback(GLFWwindow *window, double xpos, double ypos);
+  static void cursor_position_callback(GLFWwindow *window, double xpos,
+                                       double ypos);
 
+private:
   void initSkia(int w, int h);
+
+  static void key_callback(GLFWwindow *window, int key, int scancode,
+                           int action, int mods);
 };
