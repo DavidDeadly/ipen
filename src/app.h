@@ -1,6 +1,8 @@
 // Copyright (c) 2024 DavidDeadly
 #pragma once
 
+#include <libinput.h>
+#include <thread>
 #include <vector>
 
 #include "GLFW/glfw3.h"
@@ -20,6 +22,8 @@ public:
   int width;
   int height;
 
+  std::mutex mtx;
+
 private:
   SkCanvas *canvas;
   SkSurface *surface;
@@ -30,6 +34,9 @@ private:
   double prevX, prevY;
   bool isNotDrawing;
 
+  libinput_device *device;
+  std::thread *worker;
+
 public:
   // Initializes GLFW and SKIA
   App(std::string name);
@@ -39,12 +46,18 @@ public:
 
   void start();
 
-  static void cursor_position_callback(GLFWwindow *window, double xpos,
-                                       double ypos);
-
 private:
   void initSkia(int w, int h);
+  std::function<void()> initLibinput(GLFWwindow *window);
+
+  std::function<void()> handle_input_events(GLFWwindow *window,
+                                            struct libinput *input);
+  void handle_tablet_event(GLFWwindow *window,
+                           struct libinput_event_tablet_tool *tablet_event);
 
   static void key_callback(GLFWwindow *window, int key, int scancode,
                            int action, int mods);
+
+  static void cursor_position_callback(GLFWwindow *window, double xpos,
+                                       double ypos);
 };

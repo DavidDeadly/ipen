@@ -7,6 +7,7 @@
 #include <libinput.h>
 #include <linux/input.h>
 #include <string>
+#include <thread>
 #include <unistd.h>
 
 #define SK_GANESH
@@ -28,83 +29,6 @@
 #include "include/gpu/ganesh/gl/GrGLBackendSurface.h"
 #include "include/gpu/ganesh/gl/GrGLDirectContext.h"
 #include "include/gpu/ganesh/gl/GrGLInterface.h"
-
-// void handle_tablet_event(struct libinput_event_tablet_tool *tablet_event) {
-//   double xpos = libinput_event_tablet_tool_get_x(tablet_event);
-//   double ypos = libinput_event_tablet_tool_get_y(tablet_event);
-//   // double pressure = libinput_event_tablet_tool_get_pressure(tablet_event);
-//   //
-//   // std::cout << "Pen movement: X=" << xpos << ", Y=" << ypos
-//   //           << ", Pressure=" << pressure << std::endl;
-//   //
-//   if (isNotDrawing) {
-//     prevX = -1;
-//     prevY = -1;
-//     return;
-//   }
-//
-//   bool isValidLine = prevX >= 0 && prevY >= 0;
-//   if (isValidLine)
-//     lines.push_back({prevX, prevY, xpos, ypos});
-//
-//   prevX = xpos;
-//   prevY = ypos;
-// }
-
-// void handle_input_events(struct libinput *input) {
-//   while (libinput_dispatch(input) == 0) {
-//     struct libinput_event *event;
-//
-//     while ((event = libinput_get_event(input)) != NULL) {
-//       auto type = libinput_event_get_type(event);
-//
-//       if (type == LIBINPUT_EVENT_TABLET_TOOL_AXIS) {
-//         auto *tablet_event = libinput_event_get_tablet_tool_event(event);
-//         handle_tablet_event(tablet_event);
-//       }
-//
-//       if (type == LIBINPUT_EVENT_TABLET_TOOL_TIP) {
-//         auto *tablet_event = libinput_event_get_tablet_tool_event(event);
-//         auto tip_state =
-//         libinput_event_tablet_tool_get_tip_state(tablet_event);
-//
-//         isNotDrawing = tip_state == LIBINPUT_TABLET_TOOL_TIP_UP;
-//       }
-//
-//       libinput_event_destroy(event);
-//     }
-//   }
-// }
-
-// static void initLibinput() {
-//   static struct libinput_interface interface = {
-//       [](const char *path, int flags, void *user_data) {
-//         return open(path, flags);
-//       },
-//       [](int fd, void *user_data) { close(fd); }};
-//
-//   struct libinput *input = libinput_path_create_context(&interface, NULL);
-//
-//   if (!input) {
-//     std::cerr << "Failed to initialize libinput context" << std::endl;
-//     return;
-//   }
-//
-//   // TODO: get pen path programmatically
-//   const char *path = "/dev/input/event18";
-//   struct libinput_device *device = libinput_path_add_device(input, path);
-//   if (!device) {
-//     std::cerr << "Failed to initialize input device" << std::endl;
-//     libinput_unref(input);
-//     return;
-//   }
-//
-//   std::cout << "Listening for pen input..." << std::endl;
-//   handle_input_events(input);
-//
-//   libinput_device_unref(device);
-//   libinput_unref(input);
-// }
 
 static GLFWwindow *createWindow(App *app) {
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -146,6 +70,9 @@ App::App(std::string name) {
 App::~App() {
   delete surface;
   delete context;
+  delete worker;
+
+  libinput_device_unref(this->device);
 }
 
 void App::start() {
@@ -161,7 +88,11 @@ void App::start() {
 
   glfwSwapInterval(1);
 
-  // initLibinput();
+  auto handler = initLibinput(window);
+
+  if (handler)
+    this->worker = new std::thread(handler);
+
   glfwSetKeyCallback(window, App::key_callback);
   glfwSetCursorPosCallback(window, App::cursor_position_callback);
 
@@ -171,6 +102,9 @@ void App::start() {
   paint.setAntiAlias(true);
   paint.setStrokeWidth(2.0f);
   paint.setStyle(SkPaint::kStroke_Style);
+
+  auto threadId = std::this_thread::get_id();
+  std::cout << "Drawing on thread: " << threadId << std::endl;
 
   while (!glfwWindowShouldClose(window)) {
     canvas->clear(SK_ColorTRANSPARENT);
@@ -183,6 +117,9 @@ void App::start() {
     glfwSwapBuffers(window);
     glfwPollEvents();
   }
+
+  if (this->worker && this->worker->joinable())
+    this->worker->join();
 
   glfwDestroyWindow(window);
   glfwTerminate();
@@ -229,6 +166,105 @@ void App::initSkia(int w, int h) {
     abort();
 }
 
+// STACIC METHODS
+
+void App::handle_tablet_event(GLFWwindow *window,
+                              struct libinput_event_tablet_tool *tablet_event) {
+  App *app = static_cast<App *>(glfwGetWindowUserPointer(window));
+
+  double xpos = libinput_event_tablet_tool_get_x(tablet_event);
+  double ypos = libinput_event_tablet_tool_get_y(tablet_event);
+  double pressure = libinput_event_tablet_tool_get_pressure(tablet_event);
+
+  std::cout << "Pen movement: X=" << xpos << ", Y=" << ypos
+            << ", Pressure=" << pressure << std::endl;
+  // std::cout << "Is not drawing: " << app->isNotDrawing << std::endl;
+
+  if (app->isNotDrawing) {
+    app->prevX = -1;
+    app->prevY = -1;
+    return;
+  }
+
+  bool isValidLine = app->prevX >= 0 && app->prevY >= 0;
+  if (isValidLine)
+    app->lines.push_back({app->prevX, app->prevY, xpos, ypos});
+
+  app->prevX = xpos;
+  app->prevY = ypos;
+}
+
+std::function<void()> App::handle_input_events(GLFWwindow *window,
+                                               struct libinput *input) {
+
+  std::cout << "window: " << &window << std::endl;
+  std::cout << "input: " << &input << std::endl;
+  App *app = static_cast<App *>(glfwGetWindowUserPointer(window));
+  std::cout << "app: " << &app << std::endl;
+
+  return [&]() {
+    auto threadId = std::this_thread::get_id();
+    std::cout << "Listening for pen input on thread..." << threadId
+              << std::endl;
+
+    while (libinput_dispatch(input) == 0) {
+      struct libinput_event *event;
+
+      while ((event = libinput_get_event(input)) != NULL) {
+        auto type = libinput_event_get_type(event);
+
+        if (type == LIBINPUT_EVENT_TABLET_TOOL_AXIS) {
+          auto *tablet_event = libinput_event_get_tablet_tool_event(event);
+          app->handle_tablet_event(window, tablet_event);
+        }
+
+        if (type == LIBINPUT_EVENT_TABLET_TOOL_TIP) {
+          auto *tablet_event = libinput_event_get_tablet_tool_event(event);
+          auto tip_state =
+              libinput_event_tablet_tool_get_tip_state(tablet_event);
+
+          app->isNotDrawing = tip_state == LIBINPUT_TABLET_TOOL_TIP_UP;
+        }
+
+        libinput_event_destroy(event);
+      }
+    }
+
+    libinput_unref(input);
+  };
+}
+
+std::function<void()> App::initLibinput(GLFWwindow *window) {
+  static struct libinput_interface interface = {
+      [](const char *path, int flags, void *user_data) {
+        return open(path, flags);
+      },
+      [](int fd, void *user_data) { close(fd); }};
+
+  struct libinput *input = libinput_path_create_context(&interface, NULL);
+
+  if (!input) {
+    std::cerr << "Failed to initialize libinput context" << std::endl;
+    return NULL;
+  }
+
+  // TODO: get pen path programmatically
+  const char *path = "/dev/input/event18";
+  struct libinput_device *device = libinput_path_add_device(input, path);
+  if (!device) {
+    std::cerr << "Failed to initialize input device" << std::endl;
+    libinput_unref(input);
+    return NULL;
+  }
+
+  auto handler = handle_input_events(window, input);
+  App *app = static_cast<App *>(glfwGetWindowUserPointer(window));
+
+  app->device = device;
+
+  return handler;
+}
+
 void App::key_callback(GLFWwindow *window, int key, int scancode, int action,
                        int mods) {
   if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
@@ -243,6 +279,7 @@ void App::cursor_position_callback(GLFWwindow *window, double xpos,
                                    double ypos) {
   App *app = static_cast<App *>(glfwGetWindowUserPointer(window));
 
+  std::lock_guard<std::mutex> lock(app->mtx);
   app->isNotDrawing =
       glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) != GLFW_PRESS;
 
