@@ -22,8 +22,6 @@ public:
   int width;
   int height;
 
-  std::mutex mtx;
-
 private:
   SkCanvas *canvas;
   SkSurface *surface;
@@ -35,6 +33,7 @@ private:
   bool isNotDrawing;
 
   libinput_device *device;
+  libinput *input;
   std::thread *worker;
 
 public:
@@ -50,10 +49,10 @@ private:
   void initSkia(int w, int h);
   std::function<void()> initLibinput(GLFWwindow *window);
 
-  std::function<void()> handle_input_events(GLFWwindow *window,
-                                            struct libinput *input);
-  void handle_tablet_event(GLFWwindow *window,
-                           struct libinput_event_tablet_tool *tablet_event);
+  static std::function<void()> handle_input_events(GLFWwindow *window);
+  static void
+  handle_tablet_event(App *app,
+                      struct libinput_event_tablet_tool *tablet_event);
 
   static void key_callback(GLFWwindow *window, int key, int scancode,
                            int action, int mods);

@@ -72,6 +72,7 @@ App::~App() {
   delete context;
   delete worker;
 
+  libinput_unref(input);
   libinput_device_unref(this->device);
 }
 
@@ -89,7 +90,6 @@ void App::start() {
   glfwSwapInterval(1);
 
   auto handler = initLibinput(window);
-
   if (handler)
     this->worker = new std::thread(handler);
 
@@ -104,7 +104,7 @@ void App::start() {
   paint.setStyle(SkPaint::kStroke_Style);
 
   auto threadId = std::this_thread::get_id();
-  std::cout << "Drawing on thread: " << threadId << std::endl;
+  std::cout << "drawing on thread: " << threadId << std::endl;
 
   while (!glfwWindowShouldClose(window)) {
     canvas->clear(SK_ColorTRANSPARENT);
@@ -168,17 +168,14 @@ void App::initSkia(int w, int h) {
 
 // STACIC METHODS
 
-void App::handle_tablet_event(GLFWwindow *window,
+void App::handle_tablet_event(App *app,
                               struct libinput_event_tablet_tool *tablet_event) {
-  App *app = static_cast<App *>(glfwGetWindowUserPointer(window));
-
   double xpos = libinput_event_tablet_tool_get_x(tablet_event);
   double ypos = libinput_event_tablet_tool_get_y(tablet_event);
-  double pressure = libinput_event_tablet_tool_get_pressure(tablet_event);
+  // double pressure = libinput_event_tablet_tool_get_pressure(tablet_event);
 
-  std::cout << "Pen movement: X=" << xpos << ", Y=" << ypos
-            << ", Pressure=" << pressure << std::endl;
-  // std::cout << "Is not drawing: " << app->isNotDrawing << std::endl;
+  // std::cout << "Pen movement: X=" << xpos << ", Y=" << ypos
+  //           << ", Pressure=" << pressure << std::endl;
 
   if (app->isNotDrawing) {
     app->prevX = -1;
@@ -187,35 +184,33 @@ void App::handle_tablet_event(GLFWwindow *window,
   }
 
   bool isValidLine = app->prevX >= 0 && app->prevY >= 0;
-  if (isValidLine)
+  if (isValidLine) {
     app->lines.push_back({app->prevX, app->prevY, xpos, ypos});
+    std::cout << "Drawing with pen at: " << xpos << ", " << ypos << std::endl;
+  }
 
   app->prevX = xpos;
   app->prevY = ypos;
 }
 
-std::function<void()> App::handle_input_events(GLFWwindow *window,
-                                               struct libinput *input) {
-
-  std::cout << "window: " << &window << std::endl;
-  std::cout << "input: " << &input << std::endl;
-  App *app = static_cast<App *>(glfwGetWindowUserPointer(window));
-  std::cout << "app: " << &app << std::endl;
-
-  return [&]() {
+std::function<void()> App::handle_input_events(GLFWwindow *window) {
+  return [window]() {
     auto threadId = std::this_thread::get_id();
     std::cout << "Listening for pen input on thread..." << threadId
               << std::endl;
 
-    while (libinput_dispatch(input) == 0) {
+    App *app = static_cast<App *>(glfwGetWindowUserPointer(window));
+    std::cout << "app: " << &app << std::endl;
+
+    while (libinput_dispatch(app->input) == 0) {
       struct libinput_event *event;
 
-      while ((event = libinput_get_event(input)) != NULL) {
+      while ((event = libinput_get_event(app->input)) != NULL) {
         auto type = libinput_event_get_type(event);
 
         if (type == LIBINPUT_EVENT_TABLET_TOOL_AXIS) {
           auto *tablet_event = libinput_event_get_tablet_tool_event(event);
-          app->handle_tablet_event(window, tablet_event);
+          app->handle_tablet_event(app, tablet_event);
         }
 
         if (type == LIBINPUT_EVENT_TABLET_TOOL_TIP) {
@@ -229,8 +224,6 @@ std::function<void()> App::handle_input_events(GLFWwindow *window,
         libinput_event_destroy(event);
       }
     }
-
-    libinput_unref(input);
   };
 }
 
@@ -249,7 +242,7 @@ std::function<void()> App::initLibinput(GLFWwindow *window) {
   }
 
   // TODO: get pen path programmatically
-  const char *path = "/dev/input/event18";
+  const char *path = "/dev/input/event4";
   struct libinput_device *device = libinput_path_add_device(input, path);
   if (!device) {
     std::cerr << "Failed to initialize input device" << std::endl;
@@ -257,10 +250,11 @@ std::function<void()> App::initLibinput(GLFWwindow *window) {
     return NULL;
   }
 
-  auto handler = handle_input_events(window, input);
   App *app = static_cast<App *>(glfwGetWindowUserPointer(window));
-
+  app->input = input;
   app->device = device;
+
+  auto handler = handle_input_events(window);
 
   return handler;
 }
@@ -279,7 +273,6 @@ void App::cursor_position_callback(GLFWwindow *window, double xpos,
                                    double ypos) {
   App *app = static_cast<App *>(glfwGetWindowUserPointer(window));
 
-  std::lock_guard<std::mutex> lock(app->mtx);
   app->isNotDrawing =
       glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) != GLFW_PRESS;
 
@@ -290,8 +283,11 @@ void App::cursor_position_callback(GLFWwindow *window, double xpos,
   }
 
   bool isValidLine = app->prevX >= 0 && app->prevY >= 0;
-  if (isValidLine)
+  if (isValidLine) {
     app->lines.push_back({app->prevX, app->prevY, xpos, ypos});
+    std::cout << "Drawing with cursor at: " << xpos << ", " << ypos
+              << std::endl;
+  }
 
   app->prevX = xpos;
   app->prevY = ypos;
