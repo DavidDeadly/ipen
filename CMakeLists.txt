@@ -23,7 +23,8 @@ find_package(OpenGL REQUIRED)
 set (glfw_library "${PROJECT_SOURCE_DIR}/lib/glfw/build/src/libglfw3.a")
 set (skia_library "${PROJECT_SOURCE_DIR}/lib/skia/out/Release/libskia.a")
 target_link_libraries (ipen
-  ${glfw_library}
+  # ${glfw_library}
+  glfw 
   ${skia_library}
   GL
   m

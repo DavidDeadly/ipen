@@ -75,7 +75,7 @@ App::~App() {
   delete context;
   delete worker;
 
-  libinput_unref(input);
+  libinput_unref(this->input);
   libinput_device_unref(this->device);
 
   if (this->worker && this->worker->joinable())
@@ -95,9 +95,9 @@ void App::start() {
 
   glfwSwapInterval(1);
 
-  auto handler = initLibinput(window);
-  if (handler)
-    this->worker = new std::thread(handler);
+  // auto handler = initLibinput(window);
+  // if (handler)
+  //   this->worker = new std::thread(handler);
 
   glfwSetKeyCallback(window, App::key_callback);
   glfwSetCursorPosCallback(window, App::cursor_position_callback);
