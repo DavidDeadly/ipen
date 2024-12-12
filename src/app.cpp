@@ -1,25 +1,26 @@
 // Copyright (c) 2024 DavidDeadly
-#include "include/core/SkPaint.h"
-#include <cstddef>
-#include <cstdio>
+//
 #include <fcntl.h>
-#include <iostream>
 #include <libinput.h>
 #include <linux/input.h>
+#include <unistd.h>
+
+#include <algorithm>
+#include <cstddef>
+#include <cstdio>
+#include <iostream>
 #include <string>
 #include <thread>
-#include <unistd.h>
 
 #define SK_GANESH
 #define SK_GL // For GrContext::MakeGL
 #include "GLFW/glfw3.h"
 
-#include "app.h"
-
 #include "include/core/SkCanvas.h"
 #include "include/core/SkColorSpace.h"
 #include "include/core/SkFont.h"
 #include "include/core/SkImage.h"
+#include "include/core/SkPaint.h"
 #include "include/core/SkSurface.h"
 #include "include/core/SkTextBlob.h"
 #include "include/gpu/ganesh/GrBackendSurface.h"
@@ -29,6 +30,8 @@
 #include "include/gpu/ganesh/gl/GrGLBackendSurface.h"
 #include "include/gpu/ganesh/gl/GrGLDirectContext.h"
 #include "include/gpu/ganesh/gl/GrGLInterface.h"
+
+#include "app.h"
 
 static GLFWwindow *createWindow(App *app) {
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -74,6 +77,9 @@ App::~App() {
 
   libinput_unref(input);
   libinput_device_unref(this->device);
+
+  if (this->worker && this->worker->joinable())
+    this->worker->join();
 }
 
 void App::start() {
@@ -117,9 +123,6 @@ void App::start() {
     glfwSwapBuffers(window);
     glfwPollEvents();
   }
-
-  if (this->worker && this->worker->joinable())
-    this->worker->join();
 
   glfwDestroyWindow(window);
   glfwTerminate();
@@ -170,27 +173,42 @@ void App::initSkia(int w, int h) {
 
 void App::handle_tablet_event(App *app,
                               struct libinput_event_tablet_tool *tablet_event) {
-  double xpos = libinput_event_tablet_tool_get_x(tablet_event);
-  double ypos = libinput_event_tablet_tool_get_y(tablet_event);
+  double dx = libinput_event_tablet_tool_get_dx(tablet_event);
+  double dy = libinput_event_tablet_tool_get_dy(tablet_event);
   // double pressure = libinput_event_tablet_tool_get_pressure(tablet_event);
-
-  // std::cout << "Pen movement: X=" << xpos << ", Y=" << ypos
+  //
+  // std::cout << "Pen movement: X=" << dx << ", Y=" << dy
   //           << ", Pressure=" << pressure << std::endl;
 
-  if (app->isNotDrawing) {
-    app->prevX = -1;
-    app->prevY = -1;
-    return;
+  bool tip_state = libinput_event_tablet_tool_get_tip_state(tablet_event);
+  app->isNotDrawing = tip_state == LIBINPUT_TABLET_TOOL_TIP_UP;
+
+  // NOTE: Absolute drawing
+  // double xpos = libinput_event_tablet_tool_get_x(tablet_event);
+  // double ypos = libinput_event_tablet_tool_get_y(tablet_event);
+  // double appX = (xpos / 156) + app->prevX + dx * 1920;
+  // double appY = (ypos / 101.0) + app->prevY + dy * 1080;
+
+  // NOTE: relative drawing
+  // Calculate new position using deltas
+  double scaleFactor = 0.2; // Reduce speed by scaling the deltas
+  double appX = app->prevX + dx * scaleFactor * (1920 / 156);
+  double appY = app->prevY + dy * scaleFactor * (1080 / 101);
+
+  // Clamp new position to window boundaries
+  appX = std::max(0.0, std::min(appX, 1920.0));
+  appY = std::max(0.0, std::min(appY, 1080.0));
+
+  // bool isValidLine = app->prevX >= 0 && app->prevY >= 0;
+  bool isDrawing = !app->isNotDrawing;
+  if (isDrawing) {
+    app->lines.push_back({app->prevX, app->prevY, appX, appY});
+
+    std::cout << "Drawing with pen at: " << appX << ", " << appY << std::endl;
   }
 
-  bool isValidLine = app->prevX >= 0 && app->prevY >= 0;
-  if (isValidLine) {
-    app->lines.push_back({app->prevX, app->prevY, xpos, ypos});
-    std::cout << "Drawing with pen at: " << xpos << ", " << ypos << std::endl;
-  }
-
-  app->prevX = xpos;
-  app->prevY = ypos;
+  app->prevX = appX;
+  app->prevY = appY;
 }
 
 std::function<void()> App::handle_input_events(GLFWwindow *window) {
@@ -205,23 +223,15 @@ std::function<void()> App::handle_input_events(GLFWwindow *window) {
     while (libinput_dispatch(app->input) == 0) {
       struct libinput_event *event;
 
-      while ((event = libinput_get_event(app->input)) != NULL) {
+      for (; (event = libinput_get_event(app->input)) != NULL;
+           libinput_event_destroy(event)) {
         auto type = libinput_event_get_type(event);
 
-        if (type == LIBINPUT_EVENT_TABLET_TOOL_AXIS) {
-          auto *tablet_event = libinput_event_get_tablet_tool_event(event);
-          app->handle_tablet_event(app, tablet_event);
-        }
+        if (type != LIBINPUT_EVENT_TABLET_TOOL_AXIS)
+          continue;
 
-        if (type == LIBINPUT_EVENT_TABLET_TOOL_TIP) {
-          auto *tablet_event = libinput_event_get_tablet_tool_event(event);
-          auto tip_state =
-              libinput_event_tablet_tool_get_tip_state(tablet_event);
-
-          app->isNotDrawing = tip_state == LIBINPUT_TABLET_TOOL_TIP_UP;
-        }
-
-        libinput_event_destroy(event);
+        auto *tablet_event = libinput_event_get_tablet_tool_event(event);
+        app->handle_tablet_event(app, tablet_event);
       }
     }
   };
@@ -273,6 +283,7 @@ void App::cursor_position_callback(GLFWwindow *window, double xpos,
                                    double ypos) {
   App *app = static_cast<App *>(glfwGetWindowUserPointer(window));
 
+  std::cout << "Mouse position: " << xpos << ", " << ypos << std::endl;
   app->isNotDrawing =
       glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) != GLFW_PRESS;
 
