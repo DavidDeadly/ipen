@@ -1,10 +1,20 @@
 // Copyright (c) 2024 DavidDeadly
-#include "app.h"
+#include "external/window.h"
 
-const char *name = "Ipen";
+#include "app.h"
+#include "ipen.h"
 
 int main() {
-  App *app = new App(name);
+  // App *app = new App("Ipen");
+  //
+  // app->start();
 
-  app->start();
+  IWindowManager *wm = new GLFWWindowManager();
+
+  Ipen *ipen = new Ipen(wm);
+
+  ipen->start();
+  ipen->end();
+
+  return 0;
 }

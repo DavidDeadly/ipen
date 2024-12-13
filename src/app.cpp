@@ -1,5 +1,4 @@
 // Copyright (c) 2024 DavidDeadly
-//
 #include <fcntl.h>
 #include <libinput.h>
 #include <linux/input.h>

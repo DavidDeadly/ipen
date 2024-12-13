@@ -1,19 +1,31 @@
 [
 {
   "directory": "/home/daviddeadly/Dev/aaa/ipen/build",
-  "command": "/usr/bin/c++  -I/home/daviddeadly/Dev/aaa/ipen/lib/glfw/include -I/home/daviddeadly/Dev/aaa/ipen/lib/skia  -Wall -Werror -std=c++20 -Wno-attributes -g -o CMakeFiles/ipen.dir/src/app.cpp.o -c /home/daviddeadly/Dev/aaa/ipen/src/app.cpp",
+  "command": "/usr/bin/c++  -I/home/daviddeadly/Dev/aaa/ipen/lib/skia  -Wall -Werror -std=c++20 -Wno-attributes -g -o CMakeFiles/ipen.dir/src/app.cpp.o -c /home/daviddeadly/Dev/aaa/ipen/src/app.cpp",
   "file": "/home/daviddeadly/Dev/aaa/ipen/src/app.cpp",
   "output": "CMakeFiles/ipen.dir/src/app.cpp.o"
 },
 {
   "directory": "/home/daviddeadly/Dev/aaa/ipen/build",
-  "command": "/usr/bin/c++  -I/home/daviddeadly/Dev/aaa/ipen/lib/glfw/include -I/home/daviddeadly/Dev/aaa/ipen/lib/skia  -Wall -Werror -std=c++20 -Wno-attributes -g -o CMakeFiles/ipen.dir/src/ipen.cpp.o -c /home/daviddeadly/Dev/aaa/ipen/src/ipen.cpp",
+  "command": "/usr/bin/c++  -I/home/daviddeadly/Dev/aaa/ipen/lib/skia  -Wall -Werror -std=c++20 -Wno-attributes -g -o CMakeFiles/ipen.dir/src/external/drawing.cpp.o -c /home/daviddeadly/Dev/aaa/ipen/src/external/drawing.cpp",
+  "file": "/home/daviddeadly/Dev/aaa/ipen/src/external/drawing.cpp",
+  "output": "CMakeFiles/ipen.dir/src/external/drawing.cpp.o"
+},
+{
+  "directory": "/home/daviddeadly/Dev/aaa/ipen/build",
+  "command": "/usr/bin/c++  -I/home/daviddeadly/Dev/aaa/ipen/lib/skia  -Wall -Werror -std=c++20 -Wno-attributes -g -o CMakeFiles/ipen.dir/src/external/window.cpp.o -c /home/daviddeadly/Dev/aaa/ipen/src/external/window.cpp",
+  "file": "/home/daviddeadly/Dev/aaa/ipen/src/external/window.cpp",
+  "output": "CMakeFiles/ipen.dir/src/external/window.cpp.o"
+},
+{
+  "directory": "/home/daviddeadly/Dev/aaa/ipen/build",
+  "command": "/usr/bin/c++  -I/home/daviddeadly/Dev/aaa/ipen/lib/skia  -Wall -Werror -std=c++20 -Wno-attributes -g -o CMakeFiles/ipen.dir/src/ipen.cpp.o -c /home/daviddeadly/Dev/aaa/ipen/src/ipen.cpp",
   "file": "/home/daviddeadly/Dev/aaa/ipen/src/ipen.cpp",
   "output": "CMakeFiles/ipen.dir/src/ipen.cpp.o"
 },
 {
   "directory": "/home/daviddeadly/Dev/aaa/ipen/build",
-  "command": "/usr/bin/c++  -I/home/daviddeadly/Dev/aaa/ipen/lib/glfw/include -I/home/daviddeadly/Dev/aaa/ipen/lib/skia  -Wall -Werror -std=c++20 -Wno-attributes -g -o CMakeFiles/ipen.dir/src/main.cpp.o -c /home/daviddeadly/Dev/aaa/ipen/src/main.cpp",
+  "command": "/usr/bin/c++  -I/home/daviddeadly/Dev/aaa/ipen/lib/skia  -Wall -Werror -std=c++20 -Wno-attributes -g -o CMakeFiles/ipen.dir/src/main.cpp.o -c /home/daviddeadly/Dev/aaa/ipen/src/main.cpp",
   "file": "/home/daviddeadly/Dev/aaa/ipen/src/main.cpp",
   "output": "CMakeFiles/ipen.dir/src/main.cpp.o"
 }
