@@ -41,18 +41,10 @@ void GLFWWindowManager::createWindow(IDrawingManager *pointer) {
   glfwWindowHint(GLFW_MAXIMIZED, GL_TRUE);
 
   GLFWmonitor *monitor = glfwGetPrimaryMonitor();
-  const GLFWvidmode *mode = glfwGetVideoMode(monitor);
-
-  this->width = mode->width;
-  this->height = mode->height;
-
-  glfwWindowHint(GLFW_RED_BITS, mode->redBits);
-  glfwWindowHint(GLFW_GREEN_BITS, mode->greenBits);
-  glfwWindowHint(GLFW_BLUE_BITS, mode->blueBits);
-  glfwWindowHint(GLFW_REFRESH_RATE, mode->refreshRate);
+  glfwGetMonitorWorkarea(monitor, NULL, NULL, &this->width, &this->height);
 
   this->window =
-      glfwCreateWindow(this->width, this->height, this->title, monitor, NULL);
+      glfwCreateWindow(this->width, this->height, this->title, NULL, NULL);
   if (!this->window) {
     std::cerr << "Failed to create GLFW window" << std::endl;
     glfwTerminate();

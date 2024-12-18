@@ -2,7 +2,7 @@
 #include "external/drawing.h"
 #include "external/window.h"
 
-#include "ipen.h"
+#include "./ipen.h"
 
 int main() {
   IWindowManager *windowService = new GLFWWindowManager();
