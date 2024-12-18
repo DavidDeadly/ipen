@@ -52,7 +52,11 @@ void SkiaManager::init(int width, int height) {
   if (this->surface == nullptr)
     abort();
 
-  this->setDefaults();
+  this->currentPaint = new SkPaint();
+  this->currentPaint->setColor(this->currentColor);
+  this->currentPaint->setAntiAlias(true);
+  this->currentPaint->setStrokeWidth(2.0f);
+  this->currentPaint->setStyle(SkPaint::kStroke_Style);
 }
 
 void SkiaManager::cleanUp() {
@@ -60,12 +64,19 @@ void SkiaManager::cleanUp() {
   delete context;
 }
 
-void SkiaManager::setDefaults() {
-  this->paint = new SkPaint();
-  paint->setColor(SK_ColorRED);
+SkPaint *SkiaManager::generatePaint() {
+  bool samePaint = this->currentPaint->getColor() == this->currentColor;
+  std::cout << "same paint: " << samePaint << std::endl;
+  if (samePaint)
+    return this->currentPaint;
+
+  SkPaint *paint = new SkPaint();
+  paint->setColor(this->currentColor);
   paint->setAntiAlias(true);
   paint->setStrokeWidth(2.0f);
   paint->setStyle(SkPaint::kStroke_Style);
+
+  return paint;
 }
 
 void SkiaManager::display() {
@@ -74,14 +85,13 @@ void SkiaManager::display() {
 
   for (const auto line : this->lines)
     canvas->drawLine(line.prevX, line.prevY, line.currX, line.currY,
-                     *this->paint);
+                     *line.paint);
 
   this->context->flush();
 }
 
 void SkiaManager::drawLine(bool isDrawing, double xpos, double ypos) {
   bool isNotDrawing = !isDrawing;
-
   if (isNotDrawing) {
     this->prevX = -1;
     this->prevY = -1;
@@ -90,7 +100,10 @@ void SkiaManager::drawLine(bool isDrawing, double xpos, double ypos) {
 
   bool isValidLine = this->prevX >= 0 && this->prevY >= 0;
   if (isValidLine) {
-    this->lines.push_back({this->prevX, this->prevY, xpos, ypos});
+    this->currentPaint = this->generatePaint();
+
+    this->lines.push_back(
+        {this->prevX, this->prevY, xpos, ypos, this->currentPaint});
     std::cout << "Drawing with cursor at: " << xpos << ", " << ypos
               << std::endl;
   }
@@ -109,5 +122,6 @@ void SkiaManager::changeColor(Color color) {
     return;
   }
 
-  this->paint->setColor(skColor);
+  std::cout << "SkiaManager - Color changed to: " << skColor << std::endl;
+  this->currentColor = skColor;
 }

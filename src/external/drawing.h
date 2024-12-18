@@ -4,6 +4,7 @@
 #include <GLFW/glfw3.h>
 #include <unordered_map>
 
+#include "include/core/SkColor.h"
 #include "include/core/SkSurface.h"
 #include "include/gpu/ganesh/GrDirectContext.h"
 
@@ -25,18 +26,20 @@ public:
 
 struct SkiaLine {
   double prevX, prevY, currX, currY;
+  SkPaint *paint;
 };
 
 class SkiaManager : public IDrawingManager {
 private:
-  SkPaint *paint;
+  SkPaint *currentPaint;
   SkSurface *surface;
   GrDirectContext *context;
 
   std::vector<SkiaLine> lines;
   double prevX, prevY;
 
-  void setDefaults();
+  SkPaint *generatePaint();
+  SkColor currentColor = SK_ColorRED;
 
   std::unordered_map<Color, SkColor> colors = {
       {RED, SK_ColorRED},
