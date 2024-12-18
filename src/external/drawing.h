@@ -1,9 +1,17 @@
 // Copyright (c) 2024 DavidDeadly
 #pragma once
 
+#include <GLFW/glfw3.h>
+#include <unordered_map>
+
 #include "include/core/SkSurface.h"
 #include "include/gpu/ganesh/GrDirectContext.h"
-#include <GLFW/glfw3.h>
+
+enum Color {
+  RED,
+  GREEN,
+  BLUE,
+};
 
 class IDrawingManager {
 public:
@@ -12,6 +20,7 @@ public:
 
   virtual void display() = 0;
   virtual void drawLine(bool isDrawing, double xpos, double ypos) = 0;
+  virtual void changeColor(Color color) = 0;
 };
 
 struct SkiaLine {
@@ -29,10 +38,17 @@ private:
 
   void setDefaults();
 
+  std::unordered_map<Color, SkColor> colors = {
+      {RED, SK_ColorRED},
+      {GREEN, SK_ColorGREEN},
+      {BLUE, SK_ColorBLUE},
+  };
+
 public:
   void init(int width, int height);
   void cleanUp();
 
   void display();
   void drawLine(bool isDrawing, double xpos, double ypost);
+  void changeColor(Color color);
 };

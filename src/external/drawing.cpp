@@ -98,3 +98,16 @@ void SkiaManager::drawLine(bool isDrawing, double xpos, double ypos) {
   this->prevX = xpos;
   this->prevY = ypos;
 }
+
+void SkiaManager::changeColor(Color color) {
+  std::cout << "SkiaManager - Changing color to: " << color << std::endl;
+
+  SkColor skColor = this->colors[color];
+
+  if (!skColor) {
+    std::cerr << "Invalid color: " << color << std::endl;
+    return;
+  }
+
+  this->paint->setColor(skColor);
+}

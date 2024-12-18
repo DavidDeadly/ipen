@@ -68,8 +68,22 @@ static void keyboardCallback(GLFWwindow *window, int key, int scancode,
   if (action != GLFW_PRESS)
     return;
 
-  if (key == GLFW_KEY_ESCAPE)
+  if (key == GLFW_KEY_ESCAPE) {
     glfwSetWindowShouldClose(window, GL_TRUE);
+    return;
+  }
+
+  IDrawingManager *drawingManager =
+      static_cast<IDrawingManager *>(glfwGetWindowUserPointer(window));
+
+  if (key == GLFW_KEY_R)
+    drawingManager->changeColor(RED);
+
+  if (key == GLFW_KEY_G)
+    drawingManager->changeColor(GREEN);
+
+  if (key == GLFW_KEY_B)
+    drawingManager->changeColor(BLUE);
 }
 
 static void cursorCallBack(GLFWwindow *window, double xpos, double ypos) {
