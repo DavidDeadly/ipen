@@ -3,7 +3,6 @@
 #include "drawing.h"
 
 #include <GLFW/glfw3.h>
-#include <functional>
 #include <iostream>
 #include <unordered_map>
 

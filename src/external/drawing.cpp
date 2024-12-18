@@ -1,6 +1,8 @@
 // Copyright (c) 2024 DavidDeadly
 #include "drawing.h"
 
+#define SK_GANESH
+#define SK_GL // For GrContext::MakeGL
 #include <GLFW/glfw3.h>
 #include <iostream>
 
