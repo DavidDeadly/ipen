@@ -5,6 +5,7 @@
 #include <GLFW/glfw3.h>
 #include <functional>
 #include <iostream>
+#include <unordered_map>
 
 GLFWWindowManager::GLFWWindowManager() {
   std::cout << "Running GLFW: " << glfwGetVersionString() << std::endl;
@@ -63,6 +64,13 @@ void GLFWWindowManager::createWindow(IDrawingManager *pointer) {
   glfwSetWindowUserPointer(this->window, pointer);
 }
 
+std::unordered_map<int, Color> keyToColor = {
+    {GLFW_KEY_R, RED},
+    {GLFW_KEY_G, GREEN},
+    {GLFW_KEY_B, BLUE},
+    {GLFW_KEY_A, YELLOW},
+};
+
 static void keyboardCallback(GLFWwindow *window, int key, int scancode,
                              int action, int mods) {
   if (action != GLFW_PRESS)
@@ -76,14 +84,11 @@ static void keyboardCallback(GLFWwindow *window, int key, int scancode,
   IDrawingManager *drawingManager =
       static_cast<IDrawingManager *>(glfwGetWindowUserPointer(window));
 
-  if (key == GLFW_KEY_R)
-    drawingManager->changeColor(RED);
-
-  if (key == GLFW_KEY_G)
-    drawingManager->changeColor(GREEN);
-
-  if (key == GLFW_KEY_B)
-    drawingManager->changeColor(BLUE);
+  bool hasColor = keyToColor.contains(key);
+  if (hasColor) {
+    drawingManager->changeColor(keyToColor[key]);
+    return;
+  }
 }
 
 static void cursorCallBack(GLFWwindow *window, double xpos, double ypos) {

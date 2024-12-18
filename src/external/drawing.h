@@ -12,6 +12,7 @@ enum Color {
   RED,
   GREEN,
   BLUE,
+  YELLOW,
 };
 
 class IDrawingManager {
@@ -45,6 +46,7 @@ private:
       {RED, SK_ColorRED},
       {GREEN, SK_ColorGREEN},
       {BLUE, SK_ColorBLUE},
+      {YELLOW, SK_ColorYELLOW},
   };
 
 public:
