@@ -51,6 +51,7 @@ void SkiaManager::init(int width, int height) {
                       context, backendRenderTarget, kBottomLeft_GrSurfaceOrigin,
                       colorType, nullptr, nullptr)
                       .release();
+
   if (this->surface == nullptr)
     abort();
 
@@ -68,7 +69,6 @@ void SkiaManager::cleanUp() {
 
 SkPaint *SkiaManager::generatePaint() {
   bool samePaint = this->currentPaint->getColor() == this->currentColor;
-  std::cout << "same paint: " << samePaint << std::endl;
   if (samePaint)
     return this->currentPaint;
 
@@ -85,33 +85,41 @@ void SkiaManager::display() {
   SkCanvas *canvas = this->surface->getCanvas();
   canvas->clear(SK_ColorTRANSPARENT);
 
-  for (const auto line : this->lines)
-    canvas->drawLine(line.prevX, line.prevY, line.currX, line.currY,
-                     *line.paint);
+  for (const auto path : this->paths)
+    canvas->drawPath(*path.path, *path.paint);
 
   this->context->flush();
 }
 
+SkPath *path = new SkPath();
+
 void SkiaManager::drawLine(bool isDrawing, double xpos, double ypos) {
   bool isNotDrawing = !isDrawing;
   if (isNotDrawing) {
-    this->prevX = -1;
-    this->prevY = -1;
+    path = NULL;
     return;
+  }
+
+  bool hasPath = std::find_if(this->paths.begin(), this->paths.end(),
+                              [](const auto &skiaPath) {
+                                return skiaPath.path == path;
+                              }) != this->paths.end();
+
+  if (!hasPath) {
+    this->currentPaint = this->generatePaint();
+    path = new SkPath();
+    path->moveTo(xpos, ypos);
+
+    this->paths.push_back({path, this->currentPaint});
   }
 
   bool isValidLine = this->prevX >= 0 && this->prevY >= 0;
   if (isValidLine) {
-    this->currentPaint = this->generatePaint();
+    path->lineTo(xpos, ypos);
 
-    this->lines.push_back(
-        {this->prevX, this->prevY, xpos, ypos, this->currentPaint});
     std::cout << "Drawing with cursor at: " << xpos << ", " << ypos
               << std::endl;
   }
-
-  this->prevX = xpos;
-  this->prevY = ypos;
 }
 
 void SkiaManager::changeColor(Color color) {
@@ -129,7 +137,7 @@ void SkiaManager::changeColor(Color color) {
 }
 
 void SkiaManager::reset() {
-  this->lines.clear();
+  // this->lines.clear();
   this->prevX = -1;
   this->prevY = -1;
 }

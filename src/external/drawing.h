@@ -26,8 +26,8 @@ public:
   virtual void changeColor(Color color) = 0;
 };
 
-struct SkiaLine {
-  double prevX, prevY, currX, currY;
+struct SkiaPath {
+  SkPath *path;
   SkPaint *paint;
 };
 
@@ -37,7 +37,7 @@ private:
   SkSurface *surface;
   GrDirectContext *context;
 
-  std::vector<SkiaLine> lines;
+  std::vector<SkiaPath> paths;
   double prevX, prevY;
 
   SkPaint *generatePaint();
