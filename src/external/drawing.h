@@ -34,6 +34,7 @@ struct SkiaPath {
 class SkiaManager : public IDrawingManager {
 private:
   SkPaint *currentPaint;
+  SkPath *currentPath;
   SkSurface *surface;
   GrDirectContext *context;
 

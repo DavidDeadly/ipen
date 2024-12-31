@@ -91,31 +91,29 @@ void SkiaManager::display() {
   this->context->flush();
 }
 
-SkPath *path = new SkPath();
-
 void SkiaManager::drawLine(bool isDrawing, double xpos, double ypos) {
   bool isNotDrawing = !isDrawing;
   if (isNotDrawing) {
-    path = NULL;
+    this->currentPath = NULL;
     return;
   }
 
   bool hasPath = std::find_if(this->paths.begin(), this->paths.end(),
-                              [](const auto &skiaPath) {
-                                return skiaPath.path == path;
+                              [this](const auto &skiaPath) {
+                                return skiaPath.path == this->currentPath;
                               }) != this->paths.end();
 
   if (!hasPath) {
     this->currentPaint = this->generatePaint();
-    path = new SkPath();
-    path->moveTo(xpos, ypos);
+    this->currentPath = new SkPath();
+    this->currentPath->moveTo(xpos, ypos);
 
-    this->paths.push_back({path, this->currentPaint});
+    this->paths.push_back({this->currentPath, this->currentPaint});
   }
 
   bool isValidLine = this->prevX >= 0 && this->prevY >= 0;
   if (isValidLine) {
-    path->lineTo(xpos, ypos);
+    this->currentPath->lineTo(xpos, ypos);
 
     std::cout << "Drawing with cursor at: " << xpos << ", " << ypos
               << std::endl;
