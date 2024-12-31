@@ -5,6 +5,7 @@
 #define SK_GANESH
 #define SK_GL // For GrContext::MakeGL
 #include <GLFW/glfw3.h>
+#include <algorithm>
 #include <iostream>
 
 #include "include/core/SkCanvas.h"
@@ -139,16 +140,77 @@ void SkiaManager::reset() {
   this->iPaths.clear();
 }
 
+// Utility function to calculate the distance from a point to a line segment
+static float distanceToSegment(const SkPoint &lineStart, const SkPoint &lineEnd,
+                               const SkPoint &point) {
+  // Compute the vector from the line's start to end point
+  SkVector lineDirection = lineEnd - lineStart;
+  SkVector pointToStart = point - lineStart;
+
+  // Compute the projection of the point onto the line segment
+  float scaleFactor =
+      pointToStart.dot(lineDirection) / lineDirection.dot(lineDirection);
+
+  // Clamp the projection to the segment range [0, 1]
+  float MIN = 0;
+  float MAX = 1;
+  scaleFactor = std::max(MIN, std::min(MAX, scaleFactor));
+
+  // Calculate the closest point on the segment using the correct operation
+  float closestPointX = lineStart.fX + scaleFactor * lineDirection.fX;
+  float closestPointY = lineStart.fY + scaleFactor * lineDirection.fY;
+  SkPoint closestPoint = SkPoint::Make(closestPointX, closestPointY);
+
+  // Manually calculate the distance between the point and the projection
+  float dx = closestPoint.fX - point.fX;
+  float dy = closestPoint.fY - point.fY;
+
+  // Euclidean distance
+  float distance = std::pow(dx, 2) + std::pow(dy, 2);
+  return std::sqrt(distance);
+}
+
+static bool isPointNearPath(SkiaPath *iPath, const SkPoint &point) {
+  SkPath::Verb verb;
+  SkPath::Iter iter(*iPath->path, false);
+  SkPoint currentPoint, lastPoint;
+
+  float strokeWidth = iPath->paint.getStrokeWidth();
+  float simetricalStrokeWidth = strokeWidth / 2.0f;
+  const float ERASER_HIT_BOX =
+      simetricalStrokeWidth + 2.0f; // TODO: make it configurable
+
+  bool firstSegment = true;
+  while ((verb = iter.next(&currentPoint)) != SkPath::kDone_Verb) {
+    if (verb != SkPath::kLine_Verb)
+      continue;
+
+    if (firstSegment) {
+      firstSegment = false;
+      continue;
+    }
+
+    float distance = distanceToSegment(lastPoint, currentPoint, point);
+    if (distance <= ERASER_HIT_BOX)
+      return true;
+
+    lastPoint = currentPoint;
+  }
+
+  return false;
+}
+
 void SkiaManager::eraseStroke(double xpos, double ypos) {
   auto pathToEraseIter =
       std::find_if(this->iPaths.begin(), this->iPaths.end(),
-                   [xpos, ypos](const auto &skiaPath) {
-                     return skiaPath->path->contains(xpos, ypos);
+                   [xpos, ypos](const auto &iPath) {
+                     SkPoint clickedPoint = SkPoint::Make(xpos, ypos);
+
+                     return isPointNearPath(iPath, clickedPoint);
                    });
 
-  if (pathToEraseIter == this->iPaths.end()) {
+  if (pathToEraseIter == this->iPaths.end())
     return;
-  }
 
   delete *pathToEraseIter;
   this->iPaths.erase(pathToEraseIter);
