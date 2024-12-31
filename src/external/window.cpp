@@ -37,6 +37,7 @@ void GLFWWindowManager::createWindow(IDrawingManager *pointer) {
     return;
 
   glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
+  glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
   glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, GL_TRUE);
   glfwWindowHint(GLFW_MAXIMIZED, GL_TRUE);
 
@@ -74,6 +75,10 @@ static void keyboardCallback(GLFWwindow *window, int key, int scancode,
 
   IDrawingManager *drawingManager =
       static_cast<IDrawingManager *>(glfwGetWindowUserPointer(window));
+
+  if (key == GLFW_KEY_R && mods == GLFW_MOD_SHIFT) {
+    return drawingManager->reset();
+  }
 
   bool hasColor = keyToColor.contains(key);
   if (hasColor) {

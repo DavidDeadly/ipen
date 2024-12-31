@@ -22,6 +22,7 @@ public:
 
   virtual void display() = 0;
   virtual void drawLine(bool isDrawing, double xpos, double ypos) = 0;
+  virtual void reset() = 0;
   virtual void changeColor(Color color) = 0;
 };
 
@@ -54,6 +55,7 @@ public:
   void cleanUp();
 
   void display();
+  void reset();
   void drawLine(bool isDrawing, double xpos, double ypost);
   void changeColor(Color color);
 };

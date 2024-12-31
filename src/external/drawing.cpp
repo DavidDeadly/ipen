@@ -127,3 +127,9 @@ void SkiaManager::changeColor(Color color) {
   std::cout << "SkiaManager - Color changed to: " << skColor << std::endl;
   this->currentColor = skColor;
 }
+
+void SkiaManager::reset() {
+  this->lines.clear();
+  this->prevX = -1;
+  this->prevY = -1;
+}
