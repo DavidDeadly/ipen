@@ -135,7 +135,7 @@ void SkiaManager::changeColor(Color color) {
 }
 
 void SkiaManager::reset() {
-  // this->lines.clear();
+  this->paths.clear();
   this->prevX = -1;
   this->prevY = -1;
 }
