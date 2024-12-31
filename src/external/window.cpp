@@ -97,9 +97,15 @@ static void cursorCallBack(GLFWwindow *window, double xpos, double ypos) {
     return;
   }
 
+  bool isErasing =
+      glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS;
+  if (isErasing) {
+    drawingManager->eraseStroke(xpos, ypos);
+    return;
+  }
+
   bool isDrawing =
       glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS;
-
   drawingManager->drawLine(isDrawing, xpos, ypos);
 }
 

@@ -3,8 +3,11 @@
 
 #include <GLFW/glfw3.h>
 #include <unordered_map>
+#include <vector>
 
 #include "include/core/SkColor.h"
+#include "include/core/SkPaint.h"
+#include "include/core/SkPath.h"
 #include "include/core/SkSurface.h"
 #include "include/gpu/ganesh/GrDirectContext.h"
 
@@ -23,27 +26,29 @@ public:
   virtual void display() = 0;
   virtual void drawLine(bool isDrawing, double xpos, double ypos) = 0;
   virtual void reset() = 0;
+  virtual void eraseStroke(double xpos, double ypos) = 0;
   virtual void changeColor(Color color) = 0;
 };
 
 struct SkiaPath {
   SkPath *path;
-  SkPaint *paint;
+  SkPaint paint;
+
+  SkiaPath(SkPath *path, SkPaint paint) : path(path), paint(paint) {}
+
+  ~SkiaPath() { delete path; }
 };
 
 class SkiaManager : public IDrawingManager {
 private:
-  SkPaint *currentPaint;
-  SkPath *currentPath;
   SkSurface *surface;
   GrDirectContext *context;
 
-  std::vector<SkiaPath> paths;
-  double prevX, prevY;
-
-  SkPaint *generatePaint();
+  SkPaint *currentPaint;
+  SkPath *currentPath;
   SkColor currentColor = SK_ColorRED;
 
+  std::vector<SkiaPath *> iPaths;
   std::unordered_map<Color, SkColor> colors = {
       {RED, SK_ColorRED},
       {GREEN, SK_ColorGREEN},
@@ -51,12 +56,15 @@ private:
       {YELLOW, SK_ColorYELLOW},
   };
 
+  SkPaint *generatePaint();
+
 public:
   void init(int width, int height);
   void cleanUp();
 
   void display();
   void reset();
+  void eraseStroke(double xpos, double ypos);
   void drawLine(bool isDrawing, double xpos, double ypost);
   void changeColor(Color color);
 };

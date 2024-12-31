@@ -1,5 +1,6 @@
 // Copyright (c) 2024 DavidDeadly
 #include "drawing.h"
+#include <cstddef>
 
 #define SK_GANESH
 #define SK_GL // For GrContext::MakeGL
@@ -85,8 +86,8 @@ void SkiaManager::display() {
   SkCanvas *canvas = this->surface->getCanvas();
   canvas->clear(SK_ColorTRANSPARENT);
 
-  for (const auto path : this->paths)
-    canvas->drawPath(*path.path, *path.paint);
+  for (const auto iPath : this->iPaths)
+    canvas->drawPath(*iPath->path, iPath->paint);
 
   this->context->flush();
 }
@@ -98,26 +99,22 @@ void SkiaManager::drawLine(bool isDrawing, double xpos, double ypos) {
     return;
   }
 
-  bool hasPath = std::find_if(this->paths.begin(), this->paths.end(),
-                              [this](const auto &skiaPath) {
-                                return skiaPath.path == this->currentPath;
-                              }) != this->paths.end();
+  bool hasPath = std::find_if(this->iPaths.begin(), this->iPaths.end(),
+                              [this](const auto &iPath) {
+                                return iPath->path == this->currentPath;
+                              }) != this->iPaths.end();
 
   if (!hasPath) {
     this->currentPaint = this->generatePaint();
     this->currentPath = new SkPath();
     this->currentPath->moveTo(xpos, ypos);
 
-    this->paths.push_back({this->currentPath, this->currentPaint});
+    auto path = new SkiaPath(this->currentPath, *this->currentPaint);
+    this->iPaths.push_back(path);
   }
 
-  bool isValidLine = this->prevX >= 0 && this->prevY >= 0;
-  if (isValidLine) {
-    this->currentPath->lineTo(xpos, ypos);
-
-    std::cout << "Drawing with cursor at: " << xpos << ", " << ypos
-              << std::endl;
-  }
+  this->currentPath->lineTo(xpos, ypos);
+  std::cout << "Drawing with cursor at: " << xpos << ", " << ypos << std::endl;
 }
 
 void SkiaManager::changeColor(Color color) {
@@ -135,7 +132,27 @@ void SkiaManager::changeColor(Color color) {
 }
 
 void SkiaManager::reset() {
-  this->paths.clear();
-  this->prevX = -1;
-  this->prevY = -1;
+  for (auto iPath : this->iPaths) {
+    delete iPath;
+  }
+
+  this->iPaths.clear();
+}
+
+void SkiaManager::eraseStroke(double xpos, double ypos) {
+  auto pathToEraseIter =
+      std::find_if(this->iPaths.begin(), this->iPaths.end(),
+                   [xpos, ypos](const auto &skiaPath) {
+                     return skiaPath->path->contains(xpos, ypos);
+                   });
+
+  if (pathToEraseIter == this->iPaths.end()) {
+    return;
+  }
+
+  delete *pathToEraseIter;
+  this->iPaths.erase(pathToEraseIter);
+
+  std::cout << "SkiaManager - Erasing stroke at: " << xpos << ", " << ypos
+            << std::endl;
 }
