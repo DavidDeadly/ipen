@@ -106,6 +106,8 @@ void SkiaManager::drawLine(bool isDrawing, double xpos, double ypos) {
                               }) != this->iPaths.end();
 
   if (!hasPath) {
+    this->clearRedoStack();
+
     this->currentPaint = this->generatePaint();
     this->currentPath = new SkPath();
     this->currentPath->moveTo(xpos, ypos);
@@ -217,4 +219,40 @@ void SkiaManager::eraseStroke(double xpos, double ypos) {
 
   std::cout << "SkiaManager - Erasing stroke at: " << xpos << ", " << ypos
             << std::endl;
+}
+
+void SkiaManager::undo() {
+  if (this->iPaths.empty()) {
+    std::cerr << "Nothing to undo!" << std::endl;
+    return;
+  }
+
+  SkiaPath *lastPath = this->iPaths.back();
+
+  redoStack.push(lastPath);
+  this->iPaths.pop_back();
+
+  std::cout << "Undo performed!" << std::endl;
+}
+
+void SkiaManager::redo() {
+  if (this->redoStack.empty()) {
+    std::cerr << "Nothing to redo!" << std::endl;
+    return;
+  }
+
+  SkiaPath *lastPath = this->redoStack.top();
+  this->iPaths.push_back(lastPath);
+  this->redoStack.pop();
+
+  std::cout << "Redo performed!" << std::endl;
+}
+
+void SkiaManager::clearRedoStack() {
+  while (!this->redoStack.empty()) {
+    SkiaPath *lastPath = this->redoStack.top();
+    delete lastPath;
+
+    this->redoStack.pop();
+  }
 }

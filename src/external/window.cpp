@@ -76,9 +76,17 @@ static void keyboardCallback(GLFWwindow *window, int key, int scancode,
   IDrawingManager *drawingManager =
       static_cast<IDrawingManager *>(glfwGetWindowUserPointer(window));
 
-  if (key == GLFW_KEY_R && mods == GLFW_MOD_SHIFT) {
+  if (key == GLFW_KEY_R && mods == GLFW_MOD_SHIFT)
     return drawingManager->reset();
-  }
+
+  if (key == GLFW_KEY_Z && mods == GLFW_MOD_CONTROL)
+    return drawingManager->undo();
+
+  bool redoYCombination = key == GLFW_KEY_Y && mods == GLFW_MOD_CONTROL;
+  bool redoZCombination =
+      key == GLFW_KEY_Z && mods == GLFW_MOD_CONTROL + GLFW_MOD_SHIFT;
+  if (redoYCombination || redoZCombination)
+    return drawingManager->redo();
 
   bool hasColor = keyToColor.contains(key);
   if (hasColor) {

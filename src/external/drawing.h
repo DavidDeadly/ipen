@@ -2,6 +2,7 @@
 #pragma once
 
 #include <GLFW/glfw3.h>
+#include <stack>
 #include <unordered_map>
 #include <vector>
 
@@ -22,12 +23,14 @@ class IDrawingManager {
 public:
   virtual void init(int width, int height) = 0;
   virtual void cleanUp() = 0;
-
   virtual void display() = 0;
-  virtual void drawLine(bool isDrawing, double xpos, double ypos) = 0;
+
+  virtual void undo() = 0;
+  virtual void redo() = 0;
   virtual void reset() = 0;
-  virtual void eraseStroke(double xpos, double ypos) = 0;
   virtual void changeColor(Color color) = 0;
+  virtual void drawLine(bool isDrawing, double xpos, double ypos) = 0;
+  virtual void eraseStroke(double xpos, double ypos) = 0;
 };
 
 struct SkiaPath {
@@ -48,6 +51,7 @@ private:
   SkPath *currentPath;
   SkColor currentColor = SK_ColorRED;
 
+  std::stack<SkiaPath *> redoStack;
   std::vector<SkiaPath *> iPaths;
   std::unordered_map<Color, SkColor> colors = {
       {RED, SK_ColorRED},
@@ -56,15 +60,18 @@ private:
       {YELLOW, SK_ColorYELLOW},
   };
 
+  void clearRedoStack();
   SkPaint *generatePaint();
 
 public:
   void init(int width, int height);
   void cleanUp();
-
   void display();
+
   void reset();
+  void undo();
+  void redo();
+  void changeColor(Color color);
   void eraseStroke(double xpos, double ypos);
   void drawLine(bool isDrawing, double xpos, double ypost);
-  void changeColor(Color color);
 };
