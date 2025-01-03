@@ -1,15 +1,25 @@
 // Copyright (c) 2024 DavidDeadly
 #include "window.h"
-#include "drawing.h"
 
 #include <GLFW/glfw3.h>
 #include <iostream>
 #include <unordered_map>
 
+#include "drawing.h"
+#include "imgui.h"
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_opengl3.h"
+
+static void glfw_error_callback(int error, const char *description) {
+  fprintf(stderr, "GLFW Error %d: %s\n", error, description);
+}
+
 GLFWWindowManager::GLFWWindowManager() {
   std::cout << "Running GLFW: " << glfwGetVersionString() << std::endl;
 
+  glfwSetErrorCallback(glfw_error_callback);
   bool hasFaild = !glfwInit();
+
   if (hasFaild) {
     std::cout << "Failed to initialize GLFW" << std::endl;
     exit(1);
@@ -30,6 +40,10 @@ GLFWWindowManager::GLFWWindowManager() {
 void GLFWWindowManager::cleanUp() {
   glfwDestroyWindow(window);
   glfwTerminate();
+
+  ImGui_ImplOpenGL3_Shutdown();
+  ImGui_ImplGlfw_Shutdown();
+  ImGui::DestroyContext();
 }
 
 void GLFWWindowManager::createWindow(IDrawingManager *pointer) {
@@ -54,6 +68,10 @@ void GLFWWindowManager::createWindow(IDrawingManager *pointer) {
 
   glfwMakeContextCurrent(this->window);
   glfwSetWindowUserPointer(this->window, pointer);
+
+  ImGui::CreateContext();
+  ImGui::StyleColorsDark();
+  ImGui_ImplOpenGL3_Init();
 }
 
 std::unordered_map<int, Color> keyToColor = {
@@ -96,6 +114,10 @@ static void keyboardCallback(GLFWwindow *window, int key, int scancode,
 }
 
 static void cursorCallBack(GLFWwindow *window, double xpos, double ypos) {
+  bool guiFocused = ImGui::IsWindowFocused(ImGuiFocusedFlags_AnyWindow);
+  if (guiFocused)
+    return;
+
   IDrawingManager *drawingManager =
       static_cast<IDrawingManager *>(glfwGetWindowUserPointer(window));
 
@@ -120,6 +142,8 @@ static void cursorCallBack(GLFWwindow *window, double xpos, double ypos) {
 void GLFWWindowManager::setUpListeners() {
   glfwSetKeyCallback(window, keyboardCallback);
   glfwSetCursorPosCallback(window, cursorCallBack);
+
+  ImGui_ImplGlfw_InitForOpenGL(this->window, true);
 }
 
 void GLFWWindowManager::render() {
@@ -133,8 +157,55 @@ void GLFWWindowManager::render() {
     return;
   }
 
+  ImGuiIO &io = ImGui::GetIO();
+  (void)io;
+  io.ConfigFlags |=
+      ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
+
+  ImVec4 pen_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+
   while (!glfwWindowShouldClose(window)) {
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     drawingManager->display();
+
+    if (glfwGetWindowAttrib(window, GLFW_ICONIFIED) != 0) {
+      ImGui_ImplGlfw_Sleep(10);
+      continue;
+    }
+
+    // Start the Dear ImGui frame
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+
+    // 2. Show a simple window that we create ourselves. We use a Begin/End pair
+    // to create a named window.
+    {
+      static float f = 0.0f;
+      static int counter = 0;
+
+      ImGui::Begin("Hello, world!");
+
+      ImGui::Text("This is some useful text.");
+
+      ImGui::SliderFloat("float", &f, 0.0f, 1.0f);
+      ImGui::ColorEdit3(
+          "clear color",
+          (float *)&pen_color); // Edit 3 floats representing a color
+
+      if (ImGui::Button("Button"))
+        counter++;
+
+      ImGui::SameLine();
+      ImGui::Text("counter = %d", counter);
+
+      ImGui::Text("Application average %.3f ms/frame (%.1f FPS)",
+                  1000.0f / io.Framerate, io.Framerate);
+      ImGui::End();
+    }
+
+    ImGui::Render();
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
     glfwSwapBuffers(window);
     glfwPollEvents();
