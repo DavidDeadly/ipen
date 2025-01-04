@@ -60,7 +60,7 @@ void SkiaManager::init(int width, int height) {
   this->currentPaint = new SkPaint();
   this->currentPaint->setColor(this->currentColor);
   this->currentPaint->setAntiAlias(true);
-  this->currentPaint->setStrokeWidth(2.0f);
+  this->currentPaint->setStrokeWidth(3.0f);
   this->currentPaint->setStyle(SkPaint::kStroke_Style);
 }
 
@@ -164,6 +164,8 @@ void SkiaManager::changeColor(float rgba[4], Color color) {
 }
 
 void SkiaManager::reset() {
+  this->surface->getCanvas()->clear(SK_ColorTRANSPARENT);
+
   for (auto iPath : this->iPaths) {
     delete iPath;
   }

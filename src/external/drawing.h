@@ -50,7 +50,7 @@ private:
 
   SkPaint *currentPaint;
   SkPath *currentPath;
-  SkColor currentColor = SK_ColorRED;
+  SkColor currentColor = SK_ColorWHITE;
 
   std::stack<SkiaPath *> redoStack;
   std::vector<SkiaPath *> iPaths;
