@@ -4,6 +4,8 @@
 #include <GLFW/glfw3.h>
 #include <iostream>
 #include <unordered_map>
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 
 #include "drawing.h"
 #include "imgui.h"
@@ -72,6 +74,19 @@ void GLFWWindowManager::createWindow(IDrawingManager *pointer) {
   ImGui::CreateContext();
   ImGui::StyleColorsDark();
   ImGui_ImplOpenGL3_Init();
+
+  GLFWimage icon[1];
+  icon[0].pixels =
+      stbi_load("resources/ipen.png", &icon[0].width, &icon[0].height, 0, 4);
+
+  if (!icon[0].pixels) {
+    std::cerr << "Failed to load icon: " << stbi_failure_reason() << std::endl;
+    return;
+  }
+
+  glfwSetWindowIcon(window, 1, icon);
+
+  stbi_image_free(icon[0].pixels);
 }
 
 static float pen_color[4] = {1, 1, 1, 1};

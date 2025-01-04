@@ -1,0 +1,3 @@
+/usr/local/bin/ipen
+/usr/local/share/applications/ipen.desktop
+/usr/local/share/icons/hicolor/128x128/apps/ipen.png
