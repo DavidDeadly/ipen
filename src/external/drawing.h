@@ -48,8 +48,8 @@ private:
   SkSurface *surface;
   GrDirectContext *context;
 
-  SkPaint *currentPaint;
   SkPath *currentPath;
+  SkPaint *currentPaint = new SkPaint();
   SkColor currentColor = SK_ColorWHITE;
 
   std::stack<SkiaPath *> redoStack;

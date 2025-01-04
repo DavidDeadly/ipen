@@ -1,5 +1,6 @@
 // Copyright (c) 2024 DavidDeadly
 #include "drawing.h"
+#include "include/core/SkPaint.h"
 #include <cstddef>
 
 #define SK_GANESH
@@ -56,12 +57,6 @@ void SkiaManager::init(int width, int height) {
 
   if (this->surface == nullptr)
     abort();
-
-  this->currentPaint = new SkPaint();
-  this->currentPaint->setColor(this->currentColor);
-  this->currentPaint->setAntiAlias(true);
-  this->currentPaint->setStrokeWidth(3.0f);
-  this->currentPaint->setStyle(SkPaint::kStroke_Style);
 }
 
 void SkiaManager::cleanUp() {
@@ -77,9 +72,10 @@ SkPaint *SkiaManager::generatePaint() {
   SkPaint *paint = new SkPaint();
   paint->setColor(this->currentColor);
   paint->setAntiAlias(true);
-  paint->setStrokeWidth(2.0f);
+  paint->setStrokeWidth(3.0f);
   paint->setStyle(SkPaint::kStroke_Style);
 
+  delete this->currentPaint;
   return paint;
 }
 
