@@ -120,17 +120,46 @@ void SkiaManager::drawLine(bool isDrawing, double xpos, double ypos) {
   std::cout << "Drawing with cursor at: " << xpos << ", " << ypos << std::endl;
 }
 
-void SkiaManager::changeColor(Color color) {
+SkColor rbgaToSkColor(float rgba[4]) {
+  float red = rgba[0] * 255;
+  float green = rgba[1] * 255;
+  float blue = rgba[2] * 255;
+  float alpha = rgba[3] * 255;
+
+  return SkColorSetARGB(alpha, red, green, blue);
+}
+
+void SkiaManager::changeColor(float rgba[4]) {
+  SkColor skColor = rbgaToSkColor(rgba);
+
+  if (this->currentColor == skColor)
+    return;
+
+  this->currentColor = skColor;
+  std::cout << "SkiaManager - Changing color from UI to: " << &rgba
+            << std::endl;
+}
+
+void SkiaManager::changeColor(float rgba[4], Color color) {
   std::cout << "SkiaManager - Changing color to: " << color << std::endl;
 
-  SkColor skColor = this->colors[color];
-
-  if (!skColor) {
+  std::array<float, 4> rgbaColor = this->colors[color];
+  std::cout << "rgbaColor: " << rgbaColor.data() << std::endl;
+  if (rgbaColor.size() != 4) {
     std::cerr << "Invalid color: " << color << std::endl;
     return;
   }
 
-  std::cout << "SkiaManager - Color changed to: " << skColor << std::endl;
+  float *nextColor = rgbaColor.data();
+  SkColor skColor = rbgaToSkColor(nextColor);
+
+  rgba[0] = nextColor[0];
+  rgba[1] = nextColor[1];
+  rgba[2] = nextColor[2];
+  rgba[3] = nextColor[3];
+
+  std::cout << "SkiaManager - Color changed to: " << rgbaColor.data()
+            << std::endl;
   this->currentColor = skColor;
 }
 

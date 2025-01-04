@@ -28,7 +28,8 @@ public:
   virtual void undo() = 0;
   virtual void redo() = 0;
   virtual void reset() = 0;
-  virtual void changeColor(Color color) = 0;
+  virtual void changeColor(float rgba[4]) = 0;
+  virtual void changeColor(float rgba[4], Color color) = 0;
   virtual void drawLine(bool isDrawing, double xpos, double ypos) = 0;
   virtual void eraseStroke(double xpos, double ypos) = 0;
 };
@@ -53,11 +54,12 @@ private:
 
   std::stack<SkiaPath *> redoStack;
   std::vector<SkiaPath *> iPaths;
-  std::unordered_map<Color, SkColor> colors = {
-      {RED, SK_ColorRED},
-      {GREEN, SK_ColorGREEN},
-      {BLUE, SK_ColorBLUE},
-      {YELLOW, SK_ColorYELLOW},
+
+  std::unordered_map<Color, std::array<float, 4>> colors = {
+      {RED, {1, 0, 0, 1}},
+      {GREEN, {0, 0, 1, 1}},
+      {BLUE, {0, 1, 0, 1}},
+      {YELLOW, {1, 1, 0, 1}},
   };
 
   void clearRedoStack();
@@ -71,7 +73,8 @@ public:
   void reset();
   void undo();
   void redo();
-  void changeColor(Color color);
+  void changeColor(float rgba[4]);
+  void changeColor(float rgba[4], Color color);
   void eraseStroke(double xpos, double ypos);
   void drawLine(bool isDrawing, double xpos, double ypost);
 };

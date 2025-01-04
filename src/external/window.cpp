@@ -38,12 +38,12 @@ GLFWWindowManager::GLFWWindowManager() {
 }
 
 void GLFWWindowManager::cleanUp() {
-  glfwDestroyWindow(window);
-  glfwTerminate();
-
   ImGui_ImplOpenGL3_Shutdown();
   ImGui_ImplGlfw_Shutdown();
   ImGui::DestroyContext();
+
+  glfwDestroyWindow(window);
+  glfwTerminate();
 }
 
 void GLFWWindowManager::createWindow(IDrawingManager *pointer) {
@@ -74,6 +74,7 @@ void GLFWWindowManager::createWindow(IDrawingManager *pointer) {
   ImGui_ImplOpenGL3_Init();
 }
 
+static float pen_color[4] = {1, 1, 1, 1};
 std::unordered_map<int, Color> keyToColor = {
     {GLFW_KEY_R, RED},
     {GLFW_KEY_G, GREEN},
@@ -108,7 +109,7 @@ static void keyboardCallback(GLFWwindow *window, int key, int scancode,
 
   bool hasColor = keyToColor.contains(key);
   if (hasColor) {
-    drawingManager->changeColor(keyToColor[key]);
+    drawingManager->changeColor(pen_color, keyToColor[key]);
     return;
   }
 }
@@ -162,8 +163,6 @@ void GLFWWindowManager::render() {
   io.ConfigFlags |=
       ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
 
-  ImVec4 pen_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-
   while (!glfwWindowShouldClose(window)) {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     drawingManager->display();
@@ -178,29 +177,15 @@ void GLFWWindowManager::render() {
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 
-    // 2. Show a simple window that we create ourselves. We use a Begin/End pair
-    // to create a named window.
+    drawingManager->changeColor(pen_color);
+
     {
-      static float f = 0.0f;
-      static int counter = 0;
+      ImGui::Begin("Toolbar");
 
-      ImGui::Begin("Hello, world!");
-
-      ImGui::Text("This is some useful text.");
-
-      ImGui::SliderFloat("float", &f, 0.0f, 1.0f);
-      ImGui::ColorEdit3(
-          "clear color",
-          (float *)&pen_color); // Edit 3 floats representing a color
-
-      if (ImGui::Button("Button"))
-        counter++;
-
-      ImGui::SameLine();
-      ImGui::Text("counter = %d", counter);
-
+      ImGui::ColorEdit4("Pen color", pen_color);
       ImGui::Text("Application average %.3f ms/frame (%.1f FPS)",
                   1000.0f / io.Framerate, io.Framerate);
+
       ImGui::End();
     }
 
