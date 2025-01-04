@@ -91,10 +91,8 @@ void GLFWWindowManager::createWindow(IDrawingManager *pointer) {
 
 static float pen_color[4] = {1, 1, 1, 1};
 std::unordered_map<int, Color> keyToColor = {
-    {GLFW_KEY_R, RED},
-    {GLFW_KEY_G, GREEN},
-    {GLFW_KEY_B, BLUE},
-    {GLFW_KEY_A, YELLOW},
+    {GLFW_KEY_W, WHITE}, {GLFW_KEY_Q, BLACK}, {GLFW_KEY_R, RED},
+    {GLFW_KEY_G, GREEN}, {GLFW_KEY_B, BLUE},  {GLFW_KEY_A, YELLOW},
 };
 
 static void keyboardCallback(GLFWwindow *window, int key, int scancode,
@@ -110,7 +108,7 @@ static void keyboardCallback(GLFWwindow *window, int key, int scancode,
   IDrawingManager *drawingManager =
       static_cast<IDrawingManager *>(glfwGetWindowUserPointer(window));
 
-  if (key == GLFW_KEY_R && mods == GLFW_MOD_SHIFT)
+  if (key == GLFW_KEY_R && mods == GLFW_MOD_CONTROL)
     return drawingManager->reset();
 
   if (key == GLFW_KEY_Z && mods == GLFW_MOD_CONTROL)
