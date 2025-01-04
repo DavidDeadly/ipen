@@ -30,7 +30,7 @@ add_executable (${PROJECT_NAME} ${source_files})
 
 # deps
 # set (glfw_library "${PROJECT_SOURCE_DIR}/lib/glfw/build/src/libglfw3.a")
-set (skia_library "${PROJECT_SOURCE_DIR}/lib/skia/out/Release/libskia.a")
+set (skia_library "${PROJECT_SOURCE_DIR}/lib/skia/release/libskia.a")
 target_link_libraries (${PROJECT_NAME}
   # ${glfw_library}
   # input

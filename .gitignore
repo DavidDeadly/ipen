@@ -17,7 +17,9 @@ Makefile
 imgui.ini
 
 # Dependencies
-lib/
+lib/*
+!lib/stb/
+!lib/imgui/
 
 # IDE files
 .cache/
