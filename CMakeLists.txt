@@ -6,8 +6,10 @@ project (
   LANGUAGES CXX
 )
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror -std=c++20 -Wno-attributes")
-set (CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(CMAKE_CXX_FLAGS_RELEASE "-O2 -ffunction-sections -fdata-sections -Wl,--gc-sections -s")
+set(CMAKE_CXX_FLAGS_MINSIZEREL "-Os -s")
 
+set (CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # headers
 # include_directories ("${PROJECT_SOURCE_DIR}/lib/glfw/include")
@@ -31,16 +33,11 @@ add_executable (${PROJECT_NAME} ${source_files})
 set (skia_library "${PROJECT_SOURCE_DIR}/lib/skia/out/Release/libskia.a")
 target_link_libraries (${PROJECT_NAME}
   # ${glfw_library}
+  # input
   glfw 
-  wayland-client
   ${skia_library}
   GL
-  m
-  png
   freetype
-  fontconfig
-  input
-  udev
 )
 
 # installation
