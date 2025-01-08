@@ -9,8 +9,10 @@
 #include <algorithm>
 #include <iostream>
 
+#include "include/core/SkBlurTypes.h"
 #include "include/core/SkCanvas.h"
 #include "include/core/SkColorSpace.h"
+#include "include/core/SkMaskFilter.h"
 #include "include/gpu/ganesh/GrBackendSurface.h"
 #include "include/gpu/ganesh/SkSurfaceGanesh.h"
 #include "include/gpu/ganesh/gl/GrGLAssembleInterface.h"
@@ -18,6 +20,9 @@
 #include "include/gpu/ganesh/gl/GrGLDirectContext.h"
 
 void SkiaManager::init(int width, int height) {
+  this->width = width;
+  this->height = height;
+
   auto interface = GrGLMakeNativeInterface();
   if (interface == nullptr) {
     // backup plan. see
@@ -70,10 +75,17 @@ SkPaint *SkiaManager::generatePaint() {
     return this->currentPaint;
 
   SkPaint *paint = new SkPaint();
+
   paint->setColor(this->currentColor);
+
   paint->setAntiAlias(true);
-  paint->setStrokeWidth(3.0f);
+  paint->setStrokeWidth(4);
   paint->setStyle(SkPaint::kStroke_Style);
+  paint->setStrokeCap(SkPaint::kRound_Cap);
+  paint->setStrokeJoin(SkPaint::kRound_Join);
+
+  paint->setMaskFilter(
+      SkMaskFilter::MakeBlur(SkBlurStyle::kSolid_SkBlurStyle, 1));
 
   delete this->currentPaint;
   return paint;
@@ -96,6 +108,9 @@ void SkiaManager::drawLine(bool isDrawing, double xpos, double ypos) {
     return;
   }
 
+  double clampedX = std::clamp(xpos, 0.0, (double)this->width);
+  double clampedY = std::clamp(ypos, 0.0, (double)this->height);
+
   bool hasPath = std::find_if(this->iPaths.begin(), this->iPaths.end(),
                               [this](const auto &iPath) {
                                 return iPath->path == this->currentPath;
@@ -106,14 +121,15 @@ void SkiaManager::drawLine(bool isDrawing, double xpos, double ypos) {
 
     this->currentPaint = this->generatePaint();
     this->currentPath = new SkPath();
-    this->currentPath->moveTo(xpos, ypos);
+    this->currentPath->moveTo(clampedX, clampedY);
 
     auto path = new SkiaPath(this->currentPath, *this->currentPaint);
     this->iPaths.push_back(path);
   }
 
-  this->currentPath->lineTo(xpos, ypos);
-  std::cout << "Drawing with cursor at: " << xpos << ", " << ypos << std::endl;
+  this->currentPath->lineTo(clampedX, clampedY);
+  std::cout << "Drawing with cursor at: " << clampedX << ", " << clampedY
+            << std::endl;
 }
 
 SkColor rbgaToSkColor(float rgba[4]) {

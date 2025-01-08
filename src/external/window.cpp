@@ -1,6 +1,7 @@
 // Copyright (c) 2024 DavidDeadly
 #include "window.h"
 
+#include <GL/gl.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
 #include <unordered_map>
@@ -31,11 +32,8 @@ GLFWWindowManager::GLFWWindowManager() {
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
   glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-  //(uncomment to enable correct color spaces)
-  // glfwWindowHint(GLFW_SRGB_CAPABLE,
-  // GL_TRUE);
+  glfwWindowHint(GLFW_ALPHA_BITS, 8);
   glfwWindowHint(GLFW_STENCIL_BITS, 0);
-  // glfwWindowHint(GLFW_ALPHA_BITS, 0);
   glfwWindowHint(GLFW_DEPTH_BITS, 0);
 }
 
@@ -61,7 +59,7 @@ void GLFWWindowManager::createWindow(IDrawingManager *pointer) {
   glfwGetMonitorWorkarea(monitor, NULL, NULL, &this->width, &this->height);
 
   this->window =
-      glfwCreateWindow(this->width, this->height, this->title, NULL, NULL);
+      glfwCreateWindow(this->width, this->height, this->title, monitor, NULL);
   if (!this->window) {
     std::cerr << "Failed to create GLFW window" << std::endl;
     glfwTerminate();
@@ -177,7 +175,6 @@ void GLFWWindowManager::render() {
       ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
 
   while (!glfwWindowShouldClose(window)) {
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     drawingManager->display();
 
     if (glfwGetWindowAttrib(window, GLFW_ICONIFIED) != 0) {

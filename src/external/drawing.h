@@ -9,6 +9,7 @@
 #include "include/core/SkColor.h"
 #include "include/core/SkPaint.h"
 #include "include/core/SkPath.h"
+#include "include/core/SkPathBuilder.h"
 #include "include/core/SkSurface.h"
 #include "include/gpu/ganesh/GrDirectContext.h"
 
@@ -47,6 +48,9 @@ struct SkiaPath {
 
 class SkiaManager : public IDrawingManager {
 private:
+  int width;
+  int height;
+
   SkSurface *surface;
   GrDirectContext *context;
 
